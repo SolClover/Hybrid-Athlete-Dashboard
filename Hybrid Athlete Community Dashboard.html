@@ -1,0 +1,1126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hybrid Athlete Community Dashboard</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root {
+            --color-bg: #0f1419;
+            --color-surface: #1a1f26;
+            --color-accent: #ff6b35;
+            --color-accent-light: #ff8c5a;
+            --color-text: #e8eaed;
+            --color-text-secondary: #b0b4ba;
+            --color-success: #4ade80;
+            --color-warning: #fbbf24;
+            --color-error: #ef4444;
+            --color-border: #2a2f38;
+            --space-sm: 8px;
+            --space-md: 16px;
+            --space-lg: 24px;
+            --space-xl: 32px;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--color-bg);
+            color: var(--color-text);
+            line-height: 1.5;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: var(--space-md);
+        }
+
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: var(--space-xl);
+            padding-bottom: var(--space-lg);
+            border-bottom: 1px solid var(--color-border);
+        }
+
+        .logo {
+            font-size: 24px;
+            font-weight: 700;
+            color: var(--color-accent);
+        }
+
+        .date-badge {
+            background: var(--color-surface);
+            padding: var(--space-sm) var(--space-md);
+            border-radius: 8px;
+            color: var(--color-text-secondary);
+            font-size: 13px;
+        }
+
+        .tabs {
+            display: flex;
+            gap: var(--space-md);
+            margin-bottom: var(--space-xl);
+            border-bottom: 1px solid var(--color-border);
+            overflow-x: auto;
+            padding-bottom: var(--space-md);
+        }
+
+        .tab-btn {
+            background: none;
+            border: none;
+            color: var(--color-text-secondary);
+            cursor: pointer;
+            padding: var(--space-md) var(--space-lg);
+            font-size: 14px;
+            font-weight: 500;
+            border-bottom: 3px solid transparent;
+            transition: all 0.3s ease;
+            white-space: nowrap;
+        }
+
+        .tab-btn:hover {
+            color: var(--color-text);
+        }
+
+        .tab-btn.active {
+            color: var(--color-accent);
+            border-bottom-color: var(--color-accent);
+        }
+
+        .tab-content {
+            display: none;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .tab-content.active {
+            display: grid;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        /* Desktop layout: 4-column grid, single page */
+        .tab-content {
+            grid-template-columns: repeat(4, 1fr);
+            gap: var(--space-lg);
+            grid-auto-rows: max-content;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        .card {
+            background: var(--color-surface);
+            border: 1px solid var(--color-border);
+            border-radius: 12px;
+            padding: var(--space-lg);
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+
+        .card.tall {
+            grid-row: span 2;
+        }
+
+        .card.wide {
+            grid-column: span 2;
+        }
+
+        .card.wide-tall {
+            grid-column: span 2;
+            grid-row: span 2;
+        }
+
+        .card-title {
+            font-size: 13px;
+            color: var(--color-text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: var(--space-md);
+        }
+
+        .card-value {
+            font-size: 32px;
+            font-weight: 700;
+            margin-bottom: var(--space-sm);
+        }
+
+        .card-subtitle {
+            font-size: 13px;
+            color: var(--color-text-secondary);
+            margin-bottom: var(--space-md);
+        }
+
+        .metric-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: var(--space-sm) 0;
+            border-bottom: 1px solid var(--color-border);
+        }
+
+        .metric-item:last-child {
+            border-bottom: none;
+        }
+
+        .metric-label {
+            font-size: 13px;
+            color: var(--color-text-secondary);
+        }
+
+        .metric-value {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--color-text);
+        }
+
+        .pill {
+            display: inline-block;
+            background: var(--color-accent);
+            color: var(--color-bg);
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .progress-ring {
+            width: 120px;
+            height: 120px;
+            transform: rotate(-90deg);
+        }
+
+        .progress-ring__circle {
+            fill: none;
+            stroke: var(--color-border);
+            stroke-width: 8;
+        }
+
+        .progress-ring__fill {
+            fill: none;
+            stroke: var(--color-accent);
+            stroke-width: 8;
+            stroke-linecap: round;
+            transition: stroke-dashoffset 0.35s;
+        }
+
+        .progress-center {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            margin-top: var(--space-md);
+        }
+
+        .progress-label {
+            font-size: 12px;
+            color: var(--color-text-secondary);
+            margin-top: var(--space-sm);
+        }
+
+        .leaderboard-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: var(--space-md) 0;
+            border-bottom: 1px solid var(--color-border);
+        }
+
+        .leaderboard-row:last-child {
+            border-bottom: none;
+        }
+
+        .rank {
+            font-weight: 700;
+            color: var(--color-accent);
+            width: 24px;
+            text-align: center;
+        }
+
+        .rank.gold { color: #fbbf24; }
+        .rank.silver { color: #c0c0c0; }
+        .rank.bronze { color: #cd7f32; }
+
+        .athlete-info {
+            flex: 1;
+            margin-left: var(--space-md);
+        }
+
+        .athlete-name {
+            font-size: 13px;
+            font-weight: 600;
+        }
+
+        .athlete-detail {
+            font-size: 12px;
+            color: var(--color-text-secondary);
+        }
+
+        .athlete-score {
+            font-weight: 700;
+            font-size: 14px;
+        }
+
+        .chart-container {
+            position: relative;
+            height: 100%;
+            width: 100%;
+        }
+
+        .stat-box {
+            background: rgba(255, 107, 53, 0.1);
+            border-left: 4px solid var(--color-accent);
+            padding: var(--space-md);
+            border-radius: 8px;
+            margin-bottom: var(--space-md);
+        }
+
+        .stat-box-value {
+            font-size: 20px;
+            font-weight: 700;
+            color: var(--color-accent);
+        }
+
+        .stat-box-label {
+            font-size: 12px;
+            color: var(--color-text-secondary);
+            margin-top: 4px;
+        }
+
+        .zone-indicator {
+            display: flex;
+            height: 24px;
+            border-radius: 4px;
+            overflow: hidden;
+            gap: 2px;
+            margin: var(--space-md) 0;
+        }
+
+        .zone-segment {
+            flex: 1;
+            background: var(--color-border);
+            position: relative;
+        }
+
+        .zone-segment.z1 { background: #4ade80; }
+        .zone-segment.z2 { background: #60a5fa; }
+        .zone-segment.z3 { background: #fbbf24; }
+        .zone-segment.z4 { background: #ff8c5a; }
+        .zone-segment.z5 { background: #ef4444; }
+
+        /* Responsive: Mobile */
+        @media (max-width: 1400px) {
+            .tab-content {
+                grid-template-columns: repeat(3, 1fr);
+                height: auto;
+                overflow: visible;
+                gap: var(--space-md);
+            }
+
+            .card {
+                min-height: 300px;
+            }
+        }
+
+        @media (max-width: 1024px) {
+            .tab-content {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .card.wide {
+                grid-column: span 2;
+            }
+
+            .card.wide-tall {
+                grid-column: span 2;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: var(--space-md);
+            }
+
+            .tabs {
+                gap: var(--space-sm);
+                padding-bottom: var(--space-sm);
+            }
+
+            .tab-btn {
+                padding: var(--space-sm) var(--space-md);
+                font-size: 12px;
+            }
+
+            .tab-content {
+                grid-template-columns: 1fr;
+                gap: var(--space-md);
+                height: auto;
+                overflow: visible;
+            }
+
+            .card {
+                grid-column: span 1 !important;
+                grid-row: span 1 !important;
+                min-height: 250px;
+            }
+
+            .card-value {
+                font-size: 24px;
+            }
+
+            header {
+                flex-direction: column;
+                text-align: center;
+                gap: var(--space-md);
+            }
+
+            .progress-ring {
+                width: 80px;
+                height: 80px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div class="logo">🏃 Hybrid Athlete</div>
+            <div class="date-badge">Jan 4, 2026</div>
+        </header>
+
+        <div class="tabs">
+            <button class="tab-btn active" data-tab="overview">Overview</button>
+            <button class="tab-btn" data-tab="leaderboard">Leaderboard</button>
+            <button class="tab-btn" data-tab="performance">Performance</button>
+            <button class="tab-btn" data-tab="community">Community Events</button>
+            <button class="tab-btn" data-tab="insights">Insights</button>
+        </div>
+
+        <!-- OVERVIEW TAB -->
+        <div class="tab-content active" id="overview">
+            <!-- Weekly Volume -->
+            <div class="card wide">
+                <div class="card-title">📊 Weekly Volume</div>
+                <div class="chart-container">
+                    <canvas id="overviewVolumeChart"></canvas>
+                </div>
+            </div>
+
+            <!-- This Week Stats -->
+            <div class="card">
+                <div class="card-title">This Week</div>
+                <div class="metric-item">
+                    <span class="metric-label">Total Distance</span>
+                    <span class="metric-value">84.3 km</span>
+                </div>
+                <div class="metric-item">
+                    <span class="metric-label">Active Time</span>
+                    <span class="metric-value">12h 25m</span>
+                </div>
+                <div class="metric-item">
+                    <span class="metric-label">Avg Heart Rate</span>
+                    <span class="metric-value">142 bpm</span>
+                </div>
+                <div class="metric-item">
+                    <span class="metric-label">Activities</span>
+                    <span class="metric-value">6</span>
+                </div>
+            </div>
+
+            <!-- Modality Breakdown -->
+            <div class="card">
+                <div class="card-title">🎯 Modality Mix</div>
+                <div class="metric-item">
+                    <span class="metric-label">Running</span>
+                    <span class="metric-value">45%</span>
+                </div>
+                <div class="metric-item">
+                    <span class="metric-label">Strength</span>
+                    <span class="metric-value">35%</span>
+                </div>
+                <div class="metric-item">
+                    <span class="metric-label">HIIT</span>
+                    <span class="metric-value">15%</span>
+                </div>
+                <div class="metric-item">
+                    <span class="metric-label">Hyrox</span>
+                    <span class="metric-value">5%</span>
+                </div>
+            </div>
+
+            <!-- Community Pulse -->
+            <div class="card">
+                <div class="card-title">💓 Community Pulse</div>
+                <div class="card-value">347</div>
+                <div class="card-subtitle">Active Athletes This Week</div>
+                <div style="margin-top: var(--space-lg); padding-top: var(--space-lg); border-top: 1px solid var(--color-border);">
+                    <div class="metric-item">
+                        <span class="metric-label">Activities Logged</span>
+                        <span class="metric-value">1,284</span>
+                    </div>
+                    <div class="metric-item">
+                        <span class="metric-label">Collective km</span>
+                        <span class="metric-value">18.2k</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- HR Zone Distribution -->
+            <div class="card wide">
+                <div class="card-title">💚 Heart Rate Zones</div>
+                <div class="zone-indicator">
+                    <div class="zone-segment z1" title="Zone 1: 50%"></div>
+                    <div class="zone-segment z2" title="Zone 2: 35%"></div>
+                    <div class="zone-segment z3" title="Zone 3: 10%"></div>
+                    <div class="zone-segment z4" title="Zone 4: 4%"></div>
+                    <div class="zone-segment z5" title="Zone 5: 1%"></div>
+                </div>
+                <div style="display: grid; grid-template-columns: repeat(5, 1fr); gap: var(--space-sm); font-size: 11px;">
+                    <div><span class="metric-label">Z1 (50%)</span></div>
+                    <div><span class="metric-label">Z2 (35%)</span></div>
+                    <div><span class="metric-label">Z3 (10%)</span></div>
+                    <div><span class="metric-label">Z4 (4%)</span></div>
+                    <div><span class="metric-label">Z5 (1%)</span></div>
+                </div>
+            </div>
+
+            <!-- Personal Streak -->
+            <div class="card">
+                <div class="card-title">🔥 Current Streak</div>
+                <div class="card-value">12</div>
+                <div class="card-subtitle">Days in a row</div>
+                <div style="margin-top: var(--space-lg); font-size: 13px; color: var(--color-text-secondary);">
+                    Your longest: <strong style="color: var(--color-accent);">23 days</strong>
+                </div>
+            </div>
+        </div>
+
+        <!-- LEADERBOARD TAB -->
+        <div class="tab-content" id="leaderboard">
+            <!-- Running Leaderboard -->
+            <div class="card wide-tall">
+                <div class="card-title">🏃 Running Leaderboard (This Month)</div>
+                <div style="margin-top: var(--space-lg);">
+                    <div class="leaderboard-row">
+                        <span class="rank gold">1</span>
+                        <div class="athlete-info">
+                            <div class="athlete-name">Alex Chen</div>
+                            <div class="athlete-detail">284 km • 32 runs</div>
+                        </div>
+                        <div class="athlete-score">284 km</div>
+                    </div>
+                    <div class="leaderboard-row">
+                        <span class="rank silver">2</span>
+                        <div class="athlete-info">
+                            <div class="athlete-name">Jordan Mills</div>
+                            <div class="athlete-detail">261 km • 28 runs</div>
+                        </div>
+                        <div class="athlete-score">261 km</div>
+                    </div>
+                    <div class="leaderboard-row">
+                        <span class="rank bronze">3</span>
+                        <div class="athlete-info">
+                            <div class="athlete-name">Sam Rivera</div>
+                            <div class="athlete-detail">247 km • 26 runs</div>
+                        </div>
+                        <div class="athlete-score">247 km</div>
+                    </div>
+                    <div class="leaderboard-row">
+                        <span class="rank" style="color: var(--color-text-secondary);">4</span>
+                        <div class="athlete-info">
+                            <div class="athlete-name">Casey Park</div>
+                            <div class="athlete-detail">203 km • 22 runs</div>
+                        </div>
+                        <div class="athlete-score">203 km</div>
+                    </div>
+                    <div class="leaderboard-row">
+                        <span class="rank" style="color: var(--color-accent);">5 (YOU)</span>
+                        <div class="athlete-info">
+                            <div class="athlete-name">Your Name</div>
+                            <div class="athlete-detail">196 km • 20 runs</div>
+                        </div>
+                        <div class="athlete-score">196 km</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Strength Leaderboard -->
+            <div class="card wide">
+                <div class="card-title">💪 Strength Leaderboard (Top 5)</div>
+                <div style="margin-top: var(--space-lg);">
+                    <div class="leaderboard-row">
+                        <span class="rank gold">1</span>
+                        <div class="athlete-info">
+                            <div class="athlete-name">Jordan Mills</div>
+                            <div class="athlete-detail">26 sessions • 156 kg avg</div>
+                        </div>
+                        <div class="athlete-score">156 kg</div>
+                    </div>
+                    <div class="leaderboard-row">
+                        <span class="rank silver">2</span>
+                        <div class="athlete-info">
+                            <div class="athlete-name">Morgan Lee</div>
+                            <div class="athlete-detail">24 sessions • 142 kg avg</div>
+                        </div>
+                        <div class="athlete-score">142 kg</div>
+                    </div>
+                    <div class="leaderboard-row">
+                        <span class="rank bronze">3</span>
+                        <div class="athlete-info">
+                            <div class="athlete-name">Casey Park</div>
+                            <div class="athlete-detail">22 sessions • 138 kg avg</div>
+                        </div>
+                        <div class="athlete-score">138 kg</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Hyrox Specialists -->
+            <div class="card wide">
+                <div class="card-title">🏅 Hyrox Top Performers</div>
+                <div style="margin-top: var(--space-lg);">
+                    <div class="leaderboard-row">
+                        <span class="rank gold">1</span>
+                        <div class="athlete-info">
+                            <div class="athlete-name">Alex Chen</div>
+                            <div class="athlete-detail">4 races • Best: 1:28:45</div>
+                        </div>
+                        <div class="athlete-score">1:28:45</div>
+                    </div>
+                    <div class="leaderboard-row">
+                        <span class="rank silver">2</span>
+                        <div class="athlete-info">
+                            <div class="athlete-name">Your Name</div>
+                            <div class="athlete-detail">2 races • Best: 1:34:20</div>
+                        </div>
+                        <div class="athlete-score">1:34:20</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Consistency Leaders -->
+            <div class="card">
+                <div class="card-title">🔥 Consistency Kings</div>
+                <div style="margin-top: var(--space-lg);">
+                    <div class="leaderboard-row">
+                        <span class="rank gold">1</span>
+                        <div class="athlete-info">
+                            <div class="athlete-name">Morgan Lee</div>
+                            <div class="athlete-detail">28-day streak 🔥</div>
+                        </div>
+                        <div class="athlete-score">28d</div>
+                    </div>
+                    <div class="leaderboard-row">
+                        <span class="rank silver">2</span>
+                        <div class="athlete-info">
+                            <div class="athlete-name">Casey Park</div>
+                            <div class="athlete-detail">23-day streak 🔥</div>
+                        </div>
+                        <div class="athlete-score">23d</div>
+                    </div>
+                    <div class="leaderboard-row">
+                        <span class="rank bronze">3</span>
+                        <div class="athlete-info">
+                            <div class="athlete-name">Your Name</div>
+                            <div class="athlete-detail">12-day streak 🔥</div>
+                        </div>
+                        <div class="athlete-score">12d</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- PERFORMANCE TAB -->
+        <div class="tab-content" id="performance">
+            <!-- Training Load Trend -->
+            <div class="card wide-tall chart-wide-double">
+                <div class="card-title">📈 Training Load (Last 8 Weeks)</div>
+                <div class="chart-container">
+                    <canvas id="loadChart"></canvas>
+                </div>
+            </div>
+
+            <!-- Training Readiness -->
+            <div class="card tall">
+                <div class="card-title">⚡ Readiness Score</div>
+                <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%;">
+                    <svg class="progress-ring" viewBox="0 0 120 120">
+                        <circle class="progress-ring__circle" cx="60" cy="60" r="54"></circle>
+                        <circle class="progress-ring__fill" id="readinessRing" cx="60" cy="60" r="54" style="stroke-dasharray: 339.29; stroke-dashoffset: 67.86;"></circle>
+                    </svg>
+                    <div class="progress-center">
+                        <div style="font-size: 24px; font-weight: 700; color: var(--color-accent);">78%</div>
+                        <div class="progress-label">Ready to Push</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Pace Distribution -->
+            <div class="card tall">
+                <div class="card-title">🏃 Pace Distribution</div>
+                <div class="metric-item">
+                    <span class="metric-label">Easy (&gt;6:00)</span>
+                    <span class="metric-value">42%</span>
+                </div>
+                <div class="metric-item">
+                    <span class="metric-label">Threshold (5:30-6:00)</span>
+                    <span class="metric-value">28%</span>
+                </div>
+                <div class="metric-item">
+                    <span class="metric-label">Tempo (5:00-5:30)</span>
+                    <span class="metric-value">18%</span>
+                </div>
+                <div class="metric-item">
+                    <span class="metric-label">Hard (&lt;5:00)</span>
+                    <span class="metric-value">12%</span>
+                </div>
+            </div>
+
+            <!-- Recent Activity Metrics -->
+            <div class="card wide">
+                <div class="card-title">🎯 Recent Activity Breakdown</div>
+                <div class="stat-box">
+                    <div class="stat-box-value">14.2 km</div>
+                    <div class="stat-box-label">Last Run (Tempo) • Jan 3, 2026</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-box-value">1:04:32</div>
+                    <div class="stat-box-label">Strength Session • Jan 2, 2026</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-box-value">8 Rounds</div>
+                    <div class="stat-box-label">HIIT Workout • Jan 1, 2026</div>
+                </div>
+            </div>
+
+            <!-- VO2 Max Progress -->
+            <div class="card">
+                <div class="card-title">💨 VO2 Max</div>
+                <div class="card-value">54.3</div>
+                <div class="card-subtitle">ml/kg/min (Excellent)</div>
+                <div style="margin-top: var(--space-lg); padding-top: var(--space-lg); border-top: 1px solid var(--color-border); font-size: 12px;">
+                    <span style="color: var(--color-success);">↑ +1.2</span>
+                    <span style="color: var(--color-text-secondary);"> since 8 weeks ago</span>
+                </div>
+            </div>
+
+            <!-- Recovery Status -->
+            <div class="card">
+                <div class="card-title">😴 Recovery Status</div>
+                <div class="metric-item">
+                    <span class="metric-label">Sleep Avg</span>
+                    <span class="metric-value">7h 24m</span>
+                </div>
+                <div class="metric-item">
+                    <span class="metric-label">Resting HR</span>
+                    <span class="metric-value">52 bpm</span>
+                </div>
+                <div class="metric-item">
+                    <span class="metric-label">HRV Status</span>
+                    <span class="metric-value" style="color: var(--color-success);">Balanced</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- COMMUNITY EVENTS TAB -->
+        <div class="tab-content" id="community">
+            <!-- Upcoming Events -->
+            <div class="card wide-tall">
+                <div class="card-title">📅 Upcoming Community Events</div>
+                <div style="margin-top: var(--space-lg);">
+                    <div style="padding: var(--space-md); background: rgba(255, 107, 53, 0.1); border-left: 4px solid var(--color-accent); border-radius: 8px; margin-bottom: var(--space-md);">
+                        <div style="font-weight: 600; color: var(--color-text);">Hyrox Singapore 2026</div>
+                        <div style="font-size: 12px; color: var(--color-text-secondary); margin-top: 4px;">Feb 15-16 • 32 members registered</div>
+                        <div style="font-size: 13px; color: var(--color-accent); margin-top: 8px; font-weight: 500;">→ View Details</div>
+                    </div>
+                    <div style="padding: var(--space-md); background: var(--color-surface); border: 1px solid var(--color-border); border-radius: 8px; margin-bottom: var(--space-md);">
+                        <div style="font-weight: 600; color: var(--color-text);">Group Run: Victoria Peak</div>
+                        <div style="font-size: 12px; color: var(--color-text-secondary); margin-top: 4px;">Jan 11 • 8:00 AM • 18 members going</div>
+                        <div style="font-size: 13px; color: var(--color-accent); margin-top: 8px; font-weight: 500;">→ Join Group</div>
+                    </div>
+                    <div style="padding: var(--space-md); background: var(--color-surface); border: 1px solid var(--color-border); border-radius: 8px; margin-bottom: var(--space-md);">
+                        <div style="font-weight: 600; color: var(--color-text);">Strength Workshop with Coach</div>
+                        <div style="font-size: 12px; color: var(--color-text-secondary); margin-top: 4px;">Jan 18 • 6:30 PM • 24 slots available</div>
+                        <div style="font-size: 13px; color: var(--color-accent); margin-top: 8px; font-weight: 500;">→ Reserve Spot</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Event Participation Stats -->
+            <div class="card">
+                <div class="card-title">🎖️ Your Participation</div>
+                <div class="metric-item">
+                    <span class="metric-label">Events Attended</span>
+                    <span class="metric-value">8</span>
+                </div>
+                <div class="metric-item">
+                    <span class="metric-label">Group Runs</span>
+                    <span class="metric-value">5</span>
+                </div>
+                <div class="metric-item">
+                    <span class="metric-label">Workshops</span>
+                    <span class="metric-value">3</span>
+                </div>
+                <div style="margin-top: var(--space-lg); padding-top: var(--space-lg); border-top: 1px solid var(--color-border);">
+                    <span class="pill">Active Member 🌟</span>
+                </div>
+            </div>
+
+            <!-- Featured Athlete Spotlight -->
+            <div class="card wide">
+                <div class="card-title">⭐ Athlete Spotlight</div>
+                <div style="display: flex; align-items: flex-start; gap: var(--space-lg); margin-top: var(--space-lg);">
+                    <div style="width: 80px; height: 80px; background: var(--color-accent); border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 32px; flex-shrink: 0;">👩‍🦰</div>
+                    <div style="flex: 1;">
+                        <div style="font-weight: 600; font-size: 14px; margin-bottom: 4px;">Morgan Lee</div>
+                        <div style="font-size: 12px; color: var(--color-text-secondary); margin-bottom: 8px;">28-day streak | Hyrox Racer | Strength Coach</div>
+                        <div style="font-size: 13px; color: var(--color-text); line-height: 1.6;">Recently set new community record in strength benchmarks. Mentoring 5 community members on periodization strategies.</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Community Challenges -->
+            <div class="card">
+                <div class="card-title">🏆 Active Challenges</div>
+                <div style="margin-top: var(--space-lg);">
+                    <div style="padding: var(--space-md); background: var(--color-surface); border: 1px solid var(--color-border); border-radius: 8px; margin-bottom: var(--space-md);">
+                        <div style="font-size: 12px; color: var(--color-accent); font-weight: 600; margin-bottom: 4px;">In Progress</div>
+                        <div style="font-weight: 600; font-size: 13px;">100 km Challenge</div>
+                        <div style="font-size: 11px; color: var(--color-text-secondary); margin-top: 4px;">74/100 km completed</div>
+                    </div>
+                    <div style="padding: var(--space-md); background: var(--color-surface); border: 1px solid var(--color-border); border-radius: 8px;">
+                        <div style="font-size: 12px; color: var(--color-text-secondary); font-weight: 600; margin-bottom: 4px;">Available</div>
+                        <div style="font-weight: 600; font-size: 13px;">Hyrox January Series</div>
+                        <div style="font-size: 11px; color: var(--color-text-secondary); margin-top: 4px;">286 members joined</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Community Stats -->
+            <div class="card wide chart-wide-double">
+                <div class="card-title">📊 Community Monthly Stats</div>
+                <div class="chart-container">
+                    <canvas id="communityChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- INSIGHTS TAB -->
+        <div class="tab-content" id="insights">
+            <!-- Growth Metrics -->
+            <div class="card">
+                <div class="card-title">📈 Community Growth</div>
+                <div style="margin-top: var(--space-lg);">
+                    <div class="stat-box">
+                        <div class="stat-box-value">347</div>
+                        <div class="stat-box-label">Active Members This Month</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-box-value">+12%</div>
+                        <div class="stat-box-label">Month-over-month growth</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-box-value">89%</div>
+                        <div class="stat-box-label">Member retention rate</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Engagement Trends -->
+            <div class="card">
+                <div class="card-title">💡 Engagement Trends</div>
+                <div class="metric-item">
+                    <span class="metric-label">Avg Activities/Week</span>
+                    <span class="metric-value" style="color: var(--color-success);">↑ 3.7</span>
+                </div>
+                <div class="metric-item">
+                    <span class="metric-label">Event Participation</span>
+                    <span class="metric-value" style="color: var(--color-success);">↑ 24%</span>
+                </div>
+                <div class="metric-item">
+                    <span class="metric-label">Social Interactions</span>
+                    <span class="metric-value" style="color: var(--color-warning);">→ 1.2k</span>
+                </div>
+                <div class="metric-item">
+                    <span class="metric-label">Chat Messages</span>
+                    <span class="metric-value" style="color: var(--color-success);">↑ 52%</span>
+                </div>
+            </div>
+
+            <!-- Modality Adoption -->
+            <div class="card wide chart-wide-double">
+                <div class="card-title">🎯 Modality Adoption Trends</div>
+                <div class="chart-container">
+                    <canvas id="modalityChart"></canvas>
+                </div>
+            </div>
+
+            <!-- Top Modality Specialists -->
+            <div class="card">
+                <div class="card-title">🌟 Top Specialists</div>
+                <div style="margin-top: var(--space-lg);">
+                    <div style="margin-bottom: var(--space-lg);">
+                        <div style="font-size: 11px; color: var(--color-accent); font-weight: 600; text-transform: uppercase; margin-bottom: 4px;">🏃 Running Masters</div>
+                        <div style="font-weight: 600; font-size: 13px;">Alex Chen</div>
+                        <div style="font-size: 11px; color: var(--color-text-secondary);">1,247 km logged</div>
+                    </div>
+                    <div style="margin-bottom: var(--space-lg);">
+                        <div style="font-size: 11px; color: var(--color-accent); font-weight: 600; text-transform: uppercase; margin-bottom: 4px;">💪 Strength Lords</div>
+                        <div style="font-weight: 600; font-size: 13px;">Jordan Mills</div>
+                        <div style="font-size: 11px; color: var(--color-text-secondary);">156 session avg</div>
+                    </div>
+                    <div>
+                        <div style="font-size: 11px; color: var(--color-accent); font-weight: 600; text-transform: uppercase; margin-bottom: 4px;">🏅 Hyrox Elites</div>
+                        <div style="font-weight: 600; font-size: 13px;">Casey Park</div>
+                        <div style="font-size: 11px; color: var(--color-text-secondary);">4 races completed</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Member Health Score -->
+            <div class="card tall">
+                <div class="card-title">❤️ Member Health Index</div>
+                <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; gap: var(--space-lg);">
+                    <div style="text-align: center;">
+                        <div style="font-size: 32px; font-weight: 700; color: var(--color-success);">8.2/10</div>
+                        <div style="font-size: 12px; color: var(--color-text-secondary); margin-top: 4px;">Avg Community Health</div>
+                    </div>
+                    <div style="width: 100%; border-top: 1px solid var(--color-border); padding-top: var(--space-md);">
+                        <div style="font-size: 11px; color: var(--color-text-secondary); text-align: center; margin-bottom: 8px;">Consistency • Balance • Recovery</div>
+                        <div style="display: flex; gap: 4px;">
+                            <div style="flex: 1; height: 8px; background: var(--color-success); border-radius: 4px;"></div>
+                            <div style="flex: 1; height: 8px; background: var(--color-warning); border-radius: 4px;"></div>
+                            <div style="flex: 1; height: 8px; background: var(--color-info); border-radius: 4px;"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Retention Cohort -->
+            <div class="card wide chart-wide-double">
+                <div class="card-title">📊 Member Retention Cohorts (Monthly)</div>
+                <div class="chart-container">
+                    <canvas id="retentionChart"></canvas>
+                </div>
+            </div>
+
+            <!-- Recommendations -->
+            <div class="card wide">
+                <div class="card-title">💬 Insights & Recommendations</div>
+                <div style="margin-top: var(--space-lg);">
+                    <div style="padding: var(--space-md); background: rgba(34, 197, 94, 0.1); border-left: 4px solid var(--color-success); border-radius: 8px; margin-bottom: var(--space-md);">
+                        <div style="font-weight: 600; color: var(--color-text); font-size: 13px;">✅ Strong Engagement</div>
+                        <div style="font-size: 12px; color: var(--color-text-secondary); margin-top: 4px;">Members are logging more activities (+15% vs last month). Consider adding premium coaching features.</div>
+                    </div>
+                    <div style="padding: var(--space-md); background: rgba(251, 191, 36, 0.1); border-left: 4px solid var(--color-warning); border-radius: 8px;">
+                        <div style="font-weight: 600; color: var(--color-text); font-size: 13px;">⚠️ Strength Module Underutilized</div>
+                        <div style="font-size: 12px; color: var(--color-text-secondary); margin-top: 4px;">Only 28% of community doing strength. Try targeted challenges or form clinics.</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Tab switching
+        document.querySelectorAll('.tab-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+                document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+                btn.classList.add('active');
+                document.getElementById(btn.dataset.tab).classList.add('active');
+            });
+        });
+
+        // Chart configs
+        const chartConfig = {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    labels: {
+                        color: '#b0b4ba',
+                        font: { size: 12 }
+                    }
+                }
+            },
+            scales: {
+                y: {
+                    ticks: { color: '#b0b4ba', font: { size: 11 } },
+                    grid: { color: '#2a2f38', drawBorder: false }
+                },
+                x: {
+                    ticks: { color: '#b0b4ba', font: { size: 11 } },
+                    grid: { color: '#2a2f38', drawBorder: false }
+                }
+            }
+        };
+
+        // Overview Volume Chart
+        const volumeCtx = document.getElementById('overviewVolumeChart');
+        if (volumeCtx) {
+            new Chart(volumeCtx, {
+                type: 'bar',
+                data: {
+                    labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+                    datasets: [
+                        {
+                            label: 'Running (km)',
+                            data: [12, 15, 10, 14, 18, 16, 9],
+                            backgroundColor: '#ff6b35',
+                            borderRadius: 6
+                        },
+                        {
+                            label: 'Strength (min)',
+                            data: [45, 0, 50, 40, 0, 60, 45],
+                            backgroundColor: '#60a5fa',
+                            borderRadius: 6
+                        }
+                    ]
+                },
+                options: chartConfig
+            });
+        }
+
+        // Load Chart
+        const loadCtx = document.getElementById('loadChart');
+        if (loadCtx) {
+            new Chart(loadCtx, {
+                type: 'line',
+                data: {
+                    labels: ['Wk 1', 'Wk 2', 'Wk 3', 'Wk 4', 'Wk 5', 'Wk 6', 'Wk 7', 'Wk 8'],
+                    datasets: [{
+                        label: 'Training Load (AU)',
+                        data: [45, 52, 48, 58, 62, 55, 68, 72],
+                        borderColor: '#ff6b35',
+                        backgroundColor: 'rgba(255, 107, 53, 0.1)',
+                        borderWidth: 3,
+                        fill: true,
+                        tension: 0.4,
+                        pointRadius: 5,
+                        pointBackgroundColor: '#ff6b35',
+                        pointBorderColor: '#0f1419',
+                        pointBorderWidth: 2
+                    }]
+                },
+                options: {
+                    ...chartConfig,
+                    interaction: { intersect: false, mode: 'index' }
+                }
+            });
+        }
+
+        // Community Chart
+        const communityCtx = document.getElementById('communityChart');
+        if (communityCtx) {
+            new Chart(communityCtx, {
+                type: 'line',
+                data: {
+                    labels: ['Week 1', 'Week 2', 'Week 3', 'Week 4'],
+                    datasets: [
+                        {
+                            label: 'Active Users',
+                            data: [280, 305, 328, 347],
+                            borderColor: '#ff6b35',
+                            backgroundColor: 'rgba(255, 107, 53, 0.1)',
+                            borderWidth: 3,
+                            tension: 0.4,
+                            pointRadius: 5,
+                            pointBackgroundColor: '#ff6b35'
+                        },
+                        {
+                            label: 'Activities Logged',
+                            data: [820, 945, 1120, 1284],
+                            borderColor: '#4ade80',
+                            backgroundColor: 'rgba(74, 222, 128, 0.1)',
+                            borderWidth: 3,
+                            tension: 0.4,
+                            pointRadius: 5,
+                            pointBackgroundColor: '#4ade80'
+                        }
+                    ]
+                },
+                options: chartConfig
+            });
+        }
+
+        // Modality Chart
+        const modalityCtx = document.getElementById('modalityChart');
+        if (modalityCtx) {
+            new Chart(modalityCtx, {
+                type: 'bar',
+                data: {
+                    labels: ['Jan', 'Feb', 'Mar', 'Apr'],
+                    datasets: [
+                        {
+                            label: 'Running',
+                            data: [35, 38, 42, 45],
+                            backgroundColor: '#ff6b35'
+                        },
+                        {
+                            label: 'Strength',
+                            data: [28, 30, 32, 35],
+                            backgroundColor: '#60a5fa'
+                        },
+                        {
+                            label: 'HIIT',
+                            data: [18, 20, 18, 15],
+                            backgroundColor: '#fbbf24'
+                        },
+                        {
+                            label: 'Hyrox',
+                            data: [4, 6, 8, 5],
+                            backgroundColor: '#4ade80'
+                        }
+                    ]
+                },
+                options: {
+                    ...chartConfig,
+                    scales: {
+                        ...chartConfig.scales,
+                        x: {
+                            stacked: false,
+                            ...chartConfig.scales.x
+                        },
+                        y: {
+                            stacked: false,
+                            ...chartConfig.scales.y
+                        }
+                    }
+                }
+            });
+        }
+
+        // Retention Chart
+        const retentionCtx = document.getElementById('retentionChart');
+        if (retentionCtx) {
+            new Chart(retentionCtx, {
+                type: 'bar',
+                data: {
+                    labels: ['Dec', 'Jan', 'Feb', 'Mar'],
+                    datasets: [
+                        {
+                            label: 'Cohort Retention %',
+                            data: [100, 84, 72, 68],
+                            backgroundColor: '#ff6b35',
+                            borderRadius: 6
+                        }
+                    ]
+                },
+                options: chartConfig
+            });
+        }
+    </script>
+</body>
+</html>
